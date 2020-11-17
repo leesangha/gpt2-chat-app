@@ -7,15 +7,20 @@ import sys
 import threading
 import time
 from queue import Empty,Queue
+import requests
 
 from flask import Flask, render_template,flash,send_file,request,jsonify,url_for
 import numpy as np
 
 #####model#####
 from dialogpt2 import DialoGPT2
-gpt=DialoGPT2(model_name_of_path='microsoft/DialoGPT-small',cuda_device=None,use_context=False)
+gpt=DialoGPT2(model_name_or_path="microsoft/DialoGPT-small",cuda_device=None,use_context=False)
 
 app=Flask(__name__,template_folder="templates",static_url_path="/static")
+
+url = {
+    "tts":"https://master-wave-rnn-woomurf.endpoint.ainize.ai/tts"
+}
 
 requests_queue=Queue()
 BATCH_SIZE=1
@@ -42,6 +47,13 @@ threading.Thread(target=handle_requests_by_batch).start()
 
 @app.route("/")
 def main():
+    print('uuid :  ' + str(uuid.uuid4()))
+    data={"input_text":"hi","batched":True}
+    response=requests.post(url['tts'],data=data)
+    if response.status_code==200 :
+        wav_file = open("/app/"+"receive.wav", "wb")
+        wav_file.write(response.content)
+        print('end')
     return render_template("index.html")
 
 @app.route("/predict",methods=["POST"])
@@ -61,6 +73,7 @@ def predict():
             return jsonify({"error": "Error! /predict error"}),500
         
         result=req["output"]
+        print(result)
         return jsonify({"bot_msg":result}),200
     except Exception as e:
         print(e)
