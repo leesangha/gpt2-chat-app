@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="../static/style.css" />
+  </head>
+
+  <body>
+    <div id="chatborder">
+      <p id="chatlog9" class="chatlog">&nbsp;</p>
+      <p id="chatlog8" class="chatlog">&nbsp;</p>
+      <p id="chatlog7" class="chatlog">&nbsp;</p>
+      <p id="chatlog6" class="chatlog">&nbsp;</p>
+      <p id="chatlog5" class="chatlog">&nbsp;</p>
+      <p id="chatlog4" class="chatlog">&nbsp;</p>
+      <p id="chatlog3" class="chatlog">&nbsp;</p>
+      <p id="chatlog2" class="chatlog">&nbsp;</p>
+      <p id="chatlog1" class="chatlog">&nbsp;</p>
+      <input
+        type="text"
+        name="chat"
+        id="chatbox"
+        placeholder="Hi there! Type here to talk to me."
+        onfocus="placeHolder()"
+      />
+    </div>
+  </body>
+</html>
+<script>
+  var messages = [], //array that hold the record of each string in chat
+    lastUserMessage = "", //keeps track of the most recent input string from the user
+    botMessage = "", //var keeps track of what the chatbot is going to say
+    botName = "Chattingbot"; //name of the chatbot
+  function chatbotResponse(message) {
+    const formData = new FormData();
+    formData.append("message", message);
+    fetch("/predict", {
+      method: "POST",
+      body: formData,
+    })
+      .then(async (response) => {
+        if (response.status == 200) {
+          return response;
+        } else if (response.status == 413) {
+          throw Error("This is 413 error");
+        } else {
+          throw Error((await response.clone().json()).message);
+        }
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        //console.log(data.bot_msg);
+        botMessage = data.bot_msg;
+        messages.push("<b>" + botName + ":</b> " + botMessage);
+        Speech(botMessage);
+        for (var i = 1; i < 10; i++) {
+          if (messages.length > 10) messages.shift();
+          if (messages[messages.length - i])
+            document.getElementById("chatlog" + i).innerHTML =
+              messages[messages.length - i];
+        }
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  function newEntry() {
+    if (document.getElementById("chatbox").value != "") {
+      lastUserMessage = document.getElementById("chatbox").value;
+      document.getElementById("chatbox").value = "";
+      messages.push("<b>User : </b>" + lastUserMessage);
+      for (var i = 1; i < 10; i++) {
+        if (messages.length > 10) messages.shift();
+        if (messages[messages.length - i])
+          document.getElementById("chatlog" + i).innerHTML =
+            messages[messages.length - i];
+      }
+      chatbotResponse(lastUserMessage);
+    }
+  }
+
+  function Speech(say) {
+    console.log(messages);
+  }
+
+  //runs the keypress() function when a key is pressed
+  document.onkeypress = keyPress;
+  //if the key pressed is 'enter' runs the function newEntry()
+  function keyPress(e) {
+    var x = e || window.event;
+    var key = x.keyCode || x.which;
+    if (key == 13 || key == 3) {
+      //runs this function when enter is pressed
+      newEntry();
+    }
+  }
+
+  //clears the placeholder text ion the chatbox
+  //this function is set to run when the users brings focus to the chatbox, by clicking on it
+  function placeHolder() {
+    document.getElementById("chatbox").placeholder = "";
+  }
+</script>
