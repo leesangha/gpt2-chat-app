@@ -47,14 +47,25 @@ threading.Thread(target=handle_requests_by_batch).start()
 
 @app.route("/")
 def main():
-    print('uuid :  ' + str(uuid.uuid4()))
-    data={"input_text":"hi","batched":True}
-    response=requests.post(url['tts'],data=data)
-    if response.status_code==200 :
-        wav_file = open("/app/"+"receive.wav", "wb")
-        wav_file.write(response.content)
-        print('end')
     return render_template("index.html")
+
+@app.route("/read",methods=["POST"])
+def read():
+    try:
+        id=str(uuid.uuid4())
+        data={"input_text":"hi","batched":True}
+        response=requests.post(url['tts'],data=data)
+        if response.status_code==200 :
+            file_name = "/app/"+ id + ".wav"
+            wav_file = open("/app/"+id+".wav", "wb")
+            wav_file.write(response.content)
+            print('end')
+        return send_file(wav_file,mimetype="audio/wav")
+        
+    except Exception as e:
+        print(e)
+        return jsonify({"message":"read wrong"}),429
+
 
 @app.route("/predict",methods=["POST"])
 def predict():

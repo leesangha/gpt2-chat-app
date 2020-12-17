@@ -26,10 +26,11 @@
   </body>
 </html>
 <script>
-  var messages = [], //array that hold the record of each string in chat
-    lastUserMessage = "", //keeps track of the most recent input string from the user
-    botMessage = "", //var keeps track of what the chatbot is going to say
-    botName = "Chattingbot"; //name of the chatbot
+  var messages = [],
+    lastUserMessage = "",
+    botMessage = "",
+    botName = "Chattingbot";
+
   function chatbotResponse(message) {
     const formData = new FormData();
     formData.append("message", message);
@@ -51,13 +52,32 @@
         //console.log(data.bot_msg);
         botMessage = data.bot_msg;
         messages.push("<b>" + botName + ":</b> " + botMessage);
-        Speech(botMessage);
+        //Speech(botMessage);
         for (var i = 1; i < 10; i++) {
           if (messages.length > 10) messages.shift();
           if (messages[messages.length - i])
             document.getElementById("chatlog" + i).innerHTML =
               messages[messages.length - i];
         }
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  function Speech(say) {
+    console.log(messages);
+    const formData = new FormData();
+    formData.append("message", say);
+    fetch("/read", {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((response) => response.blob())
+      .then((blob) => URL.createObjectURL(blob))
+      .then((audioURL) => {
+        //추후 구현
       })
       .catch((e) => {
         console.log(e);
@@ -77,10 +97,6 @@
       }
       chatbotResponse(lastUserMessage);
     }
-  }
-
-  function Speech(say) {
-    console.log(messages);
   }
 
   //runs the keypress() function when a key is pressed
